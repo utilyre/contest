@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"
 	"github.com/utilyre/contest/internal/database"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -51,16 +53,44 @@ type AuthHandler struct {
 	queries *database.Queries
 }
 
-func (ah AuthHandler) register(w http.ResponseWriter, r *http.Request) {
-	log.Println("bro got hit")
+type RegisterParams struct {
+	Username string
+	Email    string
+	Password string
+}
 
-	account, err := ah.queries.GetAccount(r.Context(), "utilyre@gmail.com")
-	if err != nil {
-		log.Println(err)
+func (ah AuthHandler) register(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Unsupported Media Type", http.StatusUnsupportedMediaType)
 		return
 	}
 
-	log.Println(account)
+	var params RegisterParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		http.Error(w, "Unprocessable Entity", http.StatusUnprocessableEntity)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("failed to generate hash from password:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := ah.queries.CreateAccount(r.Context(), database.CreateAccountParams{
+		Username: params.Username,
+		Email:    params.Email,
+		Password: hashedPassword,
+	}); err != nil {
+		log.Println("failed to create account:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprint(w, "Account Created")
 }
 
 func (ah AuthHandler) login(w http.ResponseWriter, r *http.Request) {
