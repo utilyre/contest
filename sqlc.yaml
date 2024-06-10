@@ -6,5 +6,5 @@ sql:
     queries: "db/queries"
     gen:
       go:
-        package: "repository"
-        out: "internal/adapters/repository"
+        package: "sqlc"
+        out: "gen/sqlc"
