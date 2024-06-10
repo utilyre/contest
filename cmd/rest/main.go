@@ -1,8 +1,11 @@
 package main
 
 import (
-	"log"
+	"context"
+	"errors"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"
@@ -12,11 +15,22 @@ import (
 )
 
 func main() {
-	db, err := postgres.New()
+	ctx := context.Background()
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	db, err := postgres.New(ctx)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to establish database connection", "error", err)
+		os.Exit(1)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close database connection", "error", err)
+			os.Exit(1)
+		}
+	}()
 
 	accountRepo := postgres.NewAccountRepo(db)
 	accountSvc := service.NewAccountService(accountRepo)
@@ -34,6 +48,14 @@ func main() {
 	r.Get("/health", handler.NewHealthHandler().Check)
 	r.Mount("/api/v1", v1)
 
-	log.Println("Listening on http://localhost:3000")
-	http.ListenAndServe(":3000", r)
+	srv := &http.Server{
+		Addr:    "localhost:3000",
+		Handler: r,
+	}
+
+	slog.Info("starting http server", "address", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("failed to start http server", "error", err)
+		os.Exit(1)
+	}
 }

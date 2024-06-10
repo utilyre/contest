@@ -27,18 +27,6 @@ type Account struct {
 	Password Password
 }
 
-func NewAccount(
-	username Username,
-	email Email,
-	password Password,
-) *Account {
-	return &Account{
-		Username: username,
-		Email:    email,
-		Password: password,
-	}
-}
-
 type Username string
 
 func NewUsername(v string) (Username, error) {
