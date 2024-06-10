@@ -1,3 +1,6 @@
+// TODO: config mechanism
+// TODO: think about the deriving adapters
+
 package main
 
 import (
