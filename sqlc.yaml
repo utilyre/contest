@@ -1,0 +1,10 @@
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    schema: "db/schemata"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "repository"
+        out: "internal/adapters/repository"
