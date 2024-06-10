@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	_ "github.com/lib/pq"
 	"github.com/utilyre/contest/internal/adapters/handler"
 	"github.com/utilyre/contest/internal/adapters/postgres"
 	"github.com/utilyre/contest/internal/app/service"
