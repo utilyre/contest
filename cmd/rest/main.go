@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
 	"github.com/utilyre/contest/internal/adapters/handler"
 	"github.com/utilyre/contest/internal/adapters/postgres"
@@ -45,6 +46,9 @@ func main() {
 		r.Post("/login", handler.Login)
 	})
 
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.CleanPath)
 	r.Get("/health", handler.NewHealthHandler().Check)
 	r.Mount("/api/v1", v1)
 
@@ -52,7 +56,6 @@ func main() {
 		Addr:    "localhost:3000",
 		Handler: r,
 	}
-
 	slog.Info("starting http server", "address", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("failed to start http server", "error", err)
