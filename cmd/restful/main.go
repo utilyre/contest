@@ -20,7 +20,12 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	db, err := postgres.New(ctx)
+	db, err := postgres.New(ctx,
+		postgres.WithUser("admin"),
+		postgres.WithPassword("admin"),
+		postgres.WithDBName("contest"),
+		postgres.WithSSLMode("disable"),
+	)
 	if err != nil {
 		slog.Error("failed to establish database connection", "error", err)
 		os.Exit(1)
