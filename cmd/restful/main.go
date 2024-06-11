@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,20 +13,23 @@ import (
 	"github.com/utilyre/contest/internal/adapters/postgres"
 	"github.com/utilyre/contest/internal/adapters/restful"
 	"github.com/utilyre/contest/internal/app/service"
+	"github.com/utilyre/contest/internal/config"
 )
 
 func main() {
+	cfg, err := config.New()
+	if err != nil {
+		fmt.Printf("failed to load environment variables: %v\n", err)
+		os.Exit(1)
+	}
+
 	ctx := context.Background()
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logger)
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: cfg.LogLevel,
+	})))
 
-	db, err := postgres.New(ctx,
-		postgres.WithUser("admin"),
-		postgres.WithPassword("admin"),
-		postgres.WithDBName("contest"),
-		postgres.WithSSLMode("disable"),
-	)
+	db, err := postgres.New(ctx, postgres.WithDSN(cfg.DBConnString))
 	if err != nil {
 		slog.Error("failed to establish database connection", "error", err)
 		os.Exit(1)
@@ -41,7 +45,7 @@ func main() {
 	accountSvc := service.NewAccountService(accountRepo)
 
 	srv := &http.Server{
-		Addr:    "localhost:3000",
+		Addr:    cfg.ServerAddr,
 		Handler: restful.New(accountSvc),
 	}
 	slog.Info("starting http server", "address", srv.Addr)
