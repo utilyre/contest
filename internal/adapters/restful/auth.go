@@ -1,4 +1,4 @@
-package handler
+package restful
 
 import (
 	"encoding/json"
@@ -7,30 +7,30 @@ import (
 	"github.com/utilyre/contest/internal/app/service"
 )
 
-type AuthHandler struct {
+type authHandler struct {
 	accountSvc *service.AccountService
 }
 
-func NewAuthHandler(accountSvc *service.AccountService) *AuthHandler {
-	return &AuthHandler{
+func newAuthHandler(accountSvc *service.AccountService) *authHandler {
+	return &authHandler{
 		accountSvc: accountSvc,
 	}
 }
 
-type RegisterReq struct {
+type registerReq struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type RegisterResp struct {
+type registerResp struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }
 
-func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req RegisterReq
+func (ah *authHandler) register(w http.ResponseWriter, r *http.Request) {
+	var req registerReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Unprocessable Entity", http.StatusUnprocessableEntity)
 		return
@@ -51,24 +51,24 @@ func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(&RegisterResp{
+	_ = json.NewEncoder(w).Encode(&registerResp{
 		ID:       out.Account.ID,
 		Username: out.Account.Username.String(),
 		Email:    out.Account.Email.String(),
 	})
 }
 
-type LoginReq struct {
+type loginReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-type LoginResp struct {
+type loginResp struct {
 	Token string `json:"token"`
 }
 
-func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var params LoginReq
+func (ah *authHandler) login(w http.ResponseWriter, r *http.Request) {
+	var params loginReq
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, "Unprocessable Entity", http.StatusUnprocessableEntity)
 		return
@@ -85,7 +85,7 @@ func (ah *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(&LoginResp{
+	json.NewEncoder(w).Encode(&loginResp{
 		Token: out.Token,
 	})
 }
