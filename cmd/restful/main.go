@@ -1,5 +1,3 @@
-// TODO: config mechanism
-
 package main
 
 import (
